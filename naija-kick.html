@@ -24,7 +24,7 @@ canvas{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
 .menu{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 30%,#0b2a5aee,#02050df5)}
 .card{width:min(94%,640px);max-height:94%;overflow:auto;padding:14px 20px 16px;border-radius:20px;background:linear-gradient(160deg,#10224a,#07101f);border:1px solid #4aa3ff66;box-shadow:0 20px 60px #000a;text-align:center}
 .bar{display:flex;gap:6px;margin-bottom:10px}
-.bar button{margin:0;padding:8px 2px;font-size:11px;box-shadow:none;background:#ffffff14;border:1px solid #fff3}
+.bar button{margin:0;padding:8px 1px;font-size:10px;box-shadow:none;background:#ffffff14;border:1px solid #fff3}
 .bar button.on{background:linear-gradient(180deg,#2d8cff,#1558d6)}
 h1{margin:0 0 4px;font-size:clamp(22px,5vmin,38px);font-style:italic;font-weight:900;letter-spacing:2px;background:linear-gradient(90deg,#fff,#7cc4ff,#ffd23f);-webkit-background-clip:text;background-clip:text;color:transparent}
 p{margin:4px 0 10px;opacity:.75;font-size:13px}
@@ -60,6 +60,14 @@ select{padding:10px;border-radius:10px;border:1px solid #4aa3ff66;background:#05
 .radar:after{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,#4aa3ff00 0 300deg,#4aa3ff88 360deg);animation:rsp 1.6s linear infinite}
 .radar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:36px;z-index:1}
 @keyframes rp{0%{transform:scale(.25);opacity:.9}100%{transform:scale(1);opacity:0}}@keyframes rsp{to{transform:rotate(360deg)}}
+.lbr{display:flex;align-items:center;gap:8px;padding:7px 6px;border-bottom:1px solid #fff2;font-size:12px;text-align:left}.lbr.me{background:#ffd23f1c;border-radius:10px}.lbr .rk{width:26px;font-weight:900;text-align:center}.lbr .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}.lbr .nm small{display:block;opacity:.65;font-weight:500;font-size:10px}.lbr .pt{font-weight:900;color:#ffd23f;text-align:right}.lbr .pt small{display:block;opacity:.65;font-weight:500;font-size:10px}
+.cd2{font-size:26px;font-weight:900;color:#ffd23f;margin:2px 0}.prz{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}.prz div{padding:6px 2px;border-radius:10px;background:#ffffff12;font-size:10px;text-align:center}.prz b{display:block;font-size:13px;color:#ffd23f}
+.pbar{height:8px;border-radius:9px;background:#fff2;margin:6px 0;overflow:hidden}.pbar i{display:block;height:100%;background:linear-gradient(90deg,#27c46b,#ffd23f)}
+input[type=datetime-local],textarea{padding:10px;border-radius:10px;border:1px solid #4aa3ff66;background:#050c1c;color:#fff;font:700 13px inherit;font-family:inherit;width:100%}textarea{resize:vertical;min-height:64px;text-align:left}
+input.tx{text-transform:none;letter-spacing:0;text-align:left;font-size:14px}
+.fl{display:block;text-align:left;font-size:11px;opacity:.75;margin:8px 0 2px;font-weight:700}
+.er{color:#ff6b7d;font-weight:800;font-size:12px;min-height:16px;margin:4px 0}
+button.tr{text-align:left;font-size:13px;letter-spacing:.3px}button.tr small{display:block;opacity:.7;font-weight:600;font-size:10px;letter-spacing:0}
 </style></head><body>
 <div id="app"><div id="stage">
 <canvas id="c"></canvas>
@@ -73,6 +81,11 @@ select{padding:10px;border-radius:10px;border:1px solid #4aa3ff66;background:#05
 <script>
 const $=s=>document.querySelector(s),cv=$('#c'),g=cv.getContext('2d'),W=900,H=506;
 cv.width=W;cv.height=H;
+/* Tournament invite link: naija-kick.html?t=ID (sent through the Naija Arcade sign-in) */
+const OPENT=(()=>{const t=new URLSearchParams(location.search).get('t')||'';return /^[\w-]{6,40}$/.test(t)?t:''})();
+/* Real-money matches against the AI bot are decided in the player's own browser, so they can be faked.
+   Keep this false until a trusted server decides bot results. */
+const ALLOW_BOT_STAKES=false;
 const GX=260,GY=165,GW=380,GH=125,SX=450,SY=425;
 const L=(a,b,t)=>a+(b-a)*t,cl=(x,a=0,b=1)=>Math.max(a,Math.min(b,x)),eo=t=>1-Math.pow(1-t,3);
 const zc=i=>({x:GX+GW*((i%3)+.5)/3,y:GY+GH*((i/3|0)+.5)/2+((i/3|0)?-6:6)});
@@ -244,14 +257,16 @@ if(!ME){el.innerHTML='<button class="alt" style="grid-column:1/-1" onclick="loca
 STK.forEach(s=>{const b=document.createElement('button');b.className='chip';b.style.background='linear-gradient(135deg,#0f5a3a,#1f9d63)';b.disabled=WL.balance<s||!!WL.hold;b.style.opacity=b.disabled?.4:1;b.innerHTML=NG(s)+'<br><small>win '+NG(payN(s))+'</small>';b.onclick=()=>confirmStake(s,'pvp');el.appendChild(b)});
 const w=$('#wl');if(w)w.textContent=NG(WL.balance)}
 // ---- confirm + 10 second countdown (cancel any time before it ends) ----
-function confirmStake(s,kind){sfx('click');const bot=kind==='bot';$('#mcard').innerHTML=`<h1>ARE YOU SURE?</h1>`+(bot?`<p>You will play an <b>AI BOT</b>: a computer, not a person. Level <b>${botLv(s)}</b>. The bot never sees your pick. Stake ${NG(s)}: win ${NG(payN(s))}, draw = refund, <b>lose = only 15% of your stake (${NG(Math.floor(s*15/100))}) comes back</b>, forfeit = stake lost.</p>`:`<p>Stake <b>${NG(s)}</b> against a real player. Win ${NG(payN(s))} (15% fee on winnings), draw = refund, lose = stake lost. Leaving mid-match counts as a forfeit. 18+ only.</p>`)+`<button class="alt" onclick="countdown(${s},'${kind}')">YES, GO AHEAD</button><button class="gh" onclick="home('play')">NO, GO BACK</button>`}
-function countdown(s,kind){let n=10;clearInterval(CD);const show=()=>{$('#mcard').innerHTML=`<h1>STARTING IN</h1><div class="code">${n}</div><p>${NG(s)} · ${kind==='bot'?'AI bot match':'online match'}. Your money is only taken when the countdown ends.</p><button class="gh" onclick="cdCancel()">CANCEL</button>`;sfx('click')};show();
-CD=setInterval(()=>{n--;if(n<=0){clearInterval(CD);kind==='bot'?playBot(s):startSearch(s)}else show()},1000)}
-function cdCancel(){clearInterval(CD);home('play')}
+function confirmStake(s,kind,tid){sfx('click');tid=tid||'';const bot=kind==='bot';$('#mcard').innerHTML=`<h1>ARE YOU SURE?</h1>`+(bot?`<p>You will play an <b>AI BOT</b>: a computer, not a person. Level <b>${botLv(s)}</b>. The bot never sees your pick. Stake ${NG(s)}: win ${NG(payN(s))}, draw = refund, <b>lose = only 15% of your stake (${NG(Math.floor(s*15/100))}) comes back</b>, forfeit = stake lost.</p>`:`<p>${tid?'<b>Tournament game.</b> ':''}Stake <b>${NG(s)}</b> against ${tid?'another player in this tournament':'a real player'}. Win ${NG(payN(s))} (15% fee on winnings), draw = refund, lose = stake lost. Leaving mid-match counts as a forfeit. 18+ only.</p>`)+`<button class="alt" onclick="countdown(${s},'${kind}','${tid}')">YES, GO AHEAD</button><button class="gh" onclick="${tid?`openT('${tid}')`:`home('play')`}">NO, GO BACK</button>`}
+function countdown(s,kind,tid){tid=tid||'';let n=10;clearInterval(CD);const show=()=>{$('#mcard').innerHTML=`<h1>STARTING IN</h1><div class="code">${n}</div><p>${NG(s)} · ${kind==='bot'?'AI bot match':tid?'tournament match':'online match'}. Your money is only taken when the countdown ends.</p><button class="gh" onclick="cdCancel('${tid}')">CANCEL</button>`;sfx('click')};show();
+CD=setInterval(()=>{n--;if(n<=0){clearInterval(CD);kind==='bot'?playBot(s):startSearch(s,tid)}else show()},1000)}
+function cdCancel(tid){clearInterval(CD);tid?openT(tid):home('play')}
 // ---- online matchmaking: one player with exactly one other player ----
 function stopSearch(){clearInterval(QT);clearInterval(QP);clearInterval(QH);if(QU){QU();QU=null}QS=0}
-function searchUI(){$('#menu').classList.remove('hide');$('#hud').classList.add('hide');$('#mcard').innerHTML=`<h1>FINDING A PLAYER</h1><div class="radar"><i></i><i></i><i></i><span>⚽</span></div><p id="sTxt">Searching players online…</p><div class="code" style="font-size:30px;letter-spacing:4px" id="sClk">0:00</div><p>${NG(QSTAKE)} stake · win ${NG(payN(QSTAKE))}. You are matched with one player only.</p><button class="gh" onclick="cancelSearch()">CANCEL SEARCH</button>`}
-async function startSearch(s){if(!ME||!db){toast('Log in first');return home('play')}holdBusy=true;const wref=db.doc('wallets/'+ME.uid),qref=db.doc('queue/'+ME.uid);
+function searchUI(){$('#menu').classList.remove('hide');$('#hud').classList.add('hide');$('#mcard').innerHTML=`<h1>FINDING A PLAYER</h1><div class="radar"><i></i><i></i><i></i><span>⚽</span></div><p id="sTxt">Searching players online…</p><div class="code" style="font-size:30px;letter-spacing:4px" id="sClk">0:00</div>${QTID?'<p><b>Tournament match.</b> Waiting for another player from this tournament.</p>':''}<p>${NG(QSTAKE)} stake · win ${NG(payN(QSTAKE))}. You are matched with one player only.</p><button class="gh" onclick="cancelSearch()">CANCEL SEARCH</button>`}
+async function startSearch(s,tid){if(!ME||!db){toast('Log in first');return home('play')}
+if(tid){const r=await loadMembers(tid);if(!r.ok||!r.joined||!r.live){toast(!r.ok?'Tournament not found':!r.joined?'Join the tournament first':'This tournament is not live right now');return openT(tid)}}
+QTID=tid||null;holdBusy=true;const wref=db.doc('wallets/'+ME.uid),qref=db.doc('queue/'+ME.uid);
 try{await db.runTransaction(async t=>{const w=(await t.get(wref)).data()||{};if(w.hold)throw Error('Finish your current match first');if((w.balance||0)<s)throw Error('Not enough balance');
 t.set(wref,{balance:w.balance-s,locked:(w.locked||0)+s,hold:{stake:s,mid:'queue',at:Date.now()}},{merge:true});
 t.set(qref,{uid:ME.uid,name:CFG.name.slice(0,12),stake:s,at:Date.now(),hb:Date.now(),status:'waiting'})})}
@@ -262,7 +277,7 @@ QU=qref.onSnapshot(sn=>{const q=sn.data();if(q&&q.status==='matched')joinMatch(q
 const msgs=['Searching players online…','Checking who is ready at '+NG(s)+'…','Scanning the stadium…','Still looking, hang tight…'];
 QT=setInterval(()=>{const e=Date.now()-QS,c=$('#sClk'),t=$('#sTxt');if(c)c.textContent=Math.floor(e/60000)+':'+String(Math.floor(e/1000)%60).padStart(2,'0');if(t)t.textContent=msgs[Math.floor(e/4000)%msgs.length];if(e>=30000)noPlayers()},1000)}
 async function pairTry(){if(QPAIR||!QS)return;QPAIR=true;try{const sn=await db.collection('queue').where('stake','==',QSTAKE).limit(25).get(),now=Date.now();
-const c=sn.docs.map(d=>d.data()).filter(q=>q.status==='waiting'&&q.uid>ME.uid&&now-q.hb<30000).sort((a,b)=>a.at-b.at)[0];
+const c=sn.docs.map(d=>d.data()).filter(q=>q.status==='waiting'&&q.uid>ME.uid&&now-q.hb<30000&&(!QTID||TMEM.has(q.uid))).sort((a,b)=>a.at-b.at)[0];
 if(c){const mref=db.collection('matches').doc();await db.runTransaction(async t=>{const mq=db.doc('queue/'+ME.uid),oq=db.doc('queue/'+c.uid),[a,b]=await Promise.all([t.get(mq),t.get(oq)]);
 if(!a.exists||!b.exists||a.data().status!=='waiting'||b.data().status!=='waiting'||Date.now()-b.data().hb>30000)throw Error('skip');
 t.set(mref,{players:[ME.uid,c.uid],names:[CFG.name.slice(0,12),String(b.data().name||'PLAYER').slice(0,12)],stake:QSTAKE,status:'live',created:Date.now()});
@@ -275,10 +290,13 @@ if(qs.exists)t.delete(qref);
 t.set(wref,{balance:(w.balance||0)+w.hold.stake,locked:Math.max(0,(w.locked||0)-w.hold.stake),hold:FV().delete()},{merge:true})})}
 catch(e){permErr(e);return 'err'}
 if(mid){joinMatch(mid);return 'matched'}return 'ok'}
-async function cancelSearch(){sfx('click');const r=await cancelQueue();if(r!=='matched'){holdBusy=false;home('play')}}
-async function noPlayers(){const s=QSTAKE,r=await cancelQueue();if(r==='ok'){holdBusy=false;botOffer(s)}else if(r==='err'){holdBusy=false;home('play')}}
-function botOffer(s){$('#menu').classList.remove('hide');$('#hud').classList.add('hide');$('#mcard').innerHTML=`<h1>NO PLAYERS AVAILABLE</h1><p>We couldn't find a player at ${NG(s)} after 30 seconds. Your stake was refunded.</p><p>You can play against an <b>AI BOT</b> instead (a computer, not a person), or keep looking for a real player.</p><button class="alt" onclick="confirmStake(${s},'bot')">PLAY AI BOT · ${NG(s)}</button><p style="font-size:11px">Bot rules: win ${NG(payN(s))} · draw = refund · lose = 15% of stake back.</p><button onclick="confirmStake(${s},'pvp')">SEARCH AGAIN</button><button class="gh" onclick="home('play')">BACK</button>`}
-async function joinMatch(mid){if(QJ)return;QJ=true;stopSearch();
+async function cancelSearch(){sfx('click');const tid=QTID,r=await cancelQueue();if(r!=='matched'){holdBusy=false;tid?openT(tid):home('play')}}
+async function noPlayers(){const s=QSTAKE,tid=QTID,r=await cancelQueue();if(r==='ok'){holdBusy=false;tid?tourEmpty(s,tid):botOffer(s)}else if(r==='err'){holdBusy=false;home('play')}}
+function tourEmpty(s,tid){$('#menu').classList.remove('hide');$('#hud').classList.add('hide');$('#mcard').innerHTML=`<h1>NO TOURNAMENT PLAYERS ONLINE</h1><p>Nobody else from this tournament was searching at ${NG(s)}. Your stake was refunded.</p><p>Share the invite link so other members come online, then search again.</p><button class="alt" onclick="confirmStake(${s},'pvp','${tid}')">SEARCH AGAIN</button><button class="gh" onclick="openT('${tid}')">BACK TO THE TOURNAMENT</button>`}
+function botOffer(s){$('#menu').classList.remove('hide');$('#hud').classList.add('hide');
+if(!ALLOW_BOT_STAKES){$('#mcard').innerHTML=`<h1>NO PLAYERS AVAILABLE</h1><p>We couldn't find a player at ${NG(s)} after 30 seconds. Your stake was refunded.</p><p>You can search again, or practise for free against the computer.</p><button class="alt" onclick="confirmStake(${s},'pvp')">SEARCH AGAIN</button><button onclick="newGame('cpu',0)">⚽ FREE PRACTICE VS COMPUTER</button><button class="gh" onclick="home('play')">BACK</button>`;return}
+$('#mcard').innerHTML=`<h1>NO PLAYERS AVAILABLE</h1><p>We couldn't find a player at ${NG(s)} after 30 seconds. Your stake was refunded.</p><p>You can play against an <b>AI BOT</b> instead (a computer, not a person), or keep looking for a real player.</p><button class="alt" onclick="confirmStake(${s},'bot')">PLAY AI BOT · ${NG(s)}</button><p style="font-size:11px">Bot rules: win ${NG(payN(s))} · draw = refund · lose = 15% of stake back.</p><button onclick="confirmStake(${s},'pvp')">SEARCH AGAIN</button><button class="gh" onclick="home('play')">BACK</button>`}
+async function joinMatch(mid){if(QJ)return;QJ=true;stopSearch();QTID=null;
 try{await db.runTransaction(async t=>{const ref=db.doc('wallets/'+ME.uid),w=(await t.get(ref)).data()||{};if(w.hold&&w.hold.mid==='queue')t.set(ref,{hold:{stake:w.hold.stake,mid,at:w.hold.at}},{merge:true})})}
 catch(e){QJ=false;holdBusy=false;permErr(e);return home('play')}
 startNet(mid)}
@@ -320,7 +338,7 @@ if(ro&&ro!==me){set('Result disputed. Your stake is held until support reviews i
 else if(ro===me||solo){await settleTx(mid,uid,me,stake);clearInterval(iv);if(me===uid)ref.update({status:'done',winner:uid,reason:'agreed'}).catch(()=>{});set(me==='draw'?'Draw. Stake '+NG(stake)+' refunded':me===uid?'+'+NG(payN(stake))+' paid to your wallet (15% fee on winnings)':'Stake '+NG(stake)+' lost');done()}
 else set('Waiting for your opponent to confirm the result…')}catch(e){permErr(e);clearInterval(iv);set('Could not settle ('+(e.code||e.message)+')'+await walletDiag()+'. Reload the game to retry.');done()}busy=false},3000)}
 // ---- stake match vs a DISCLOSED AI bot ----
-async function playBot(s){if(!ME||!db)return toast('Log in first');sfx('click');holdBusy=true;const ref=db.doc('wallets/'+ME.uid);
+async function playBot(s){if(!ALLOW_BOT_STAKES){toast('AI bot stake matches are switched off');return home('play')}if(!ME||!db)return toast('Log in first');sfx('click');holdBusy=true;const ref=db.doc('wallets/'+ME.uid);
 try{await db.runTransaction(async t=>{const w=(await t.get(ref)).data()||{};if(w.hold)throw Error('Finish your current match first');if((w.balance||0)<s)throw Error('Not enough balance');
 t.set(ref,{balance:w.balance-s,locked:(w.locked||0)+s,hold:{stake:s,mid:'bot',at:Date.now()}},{merge:true})})}
 catch(e){holdBusy=false;permErr(e);home('play');return}
@@ -338,6 +356,116 @@ function resumeHold(){const h=WL.hold;if(!h||S||holdBusy||QS)return;holdBusy=tru
 if(h.mid==='bot')botSettle(h.stake,localStorage.getItem('pkbotr')||'F');
 else if(h.mid==='queue')cancelQueue().then(r=>{if(r!=='matched')holdBusy=false});
 else startNet(h.mid)}
+// ======================= LEADERBOARDS + TOURNAMENTS =======================
+/* Lagos time (UTC+1, no daylight saving). Must match the admin page. */
+const WAT=36e5;
+const ymd=m=>new Date(m+WAT).toISOString().slice(0,10);
+const dayStart=m=>Math.floor((m+WAT)/864e5)*864e5-WAT;
+function periodOf(board,m){const d0=dayStart(m);
+  if(board==='day')return{key:ymd(d0),start:d0,end:d0+864e5};
+  if(board==='week'){const back=(new Date(d0+WAT).getUTCDay()+6)%7,s=d0-back*864e5;return{key:ymd(s),start:s,end:s+7*864e5}}
+  const t=new Date(d0+WAT),y=t.getUTCFullYear(),mo=t.getUTCMonth();return{key:y+'-'+String(mo+1).padStart(2,'0'),start:Date.UTC(y,mo,1)-WAT,end:Date.UTC(y,mo+1,1)-WAT}}
+const LBL={day:'Daily',week:'Weekly',month:'Monthly'};
+const msOf=t=>t&&t.toMillis?t.toMillis():(typeof t==='number'?t:0);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fdt=m=>new Date(m).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+const fdy=m=>new Date(m+WAT).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
+const plabel=(b,p)=>b==='day'?fdy(p.start):b==='week'?fdy(p.start)+' to '+fdy(p.end-1):new Date(p.start+WAT).toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'});
+let BD={},RWD=[],TL=[],TMY=[],BT='day',TV=null,TD=null,TSD=null,TEN=[],TMEM=new Set(),QTID=null,unB=[],unR=null,unTL=null,unTE=null,unTD=null,unTS=null,unTN=null,tOpened=false;
+function unsubLB(){unB.forEach(f=>f());unB=[];[unR,unTL,unTE,unTD,unTS,unTN].forEach(f=>f&&f());unR=unTL=unTE=unTD=unTS=unTN=null}
+function subLB(){unsubLB();if(!ME||!db)return;const now=Date.now();
+  ['day','week','month'].forEach(b=>{const p=periodOf(b,now);unB.push(db.doc('boards/'+b+'_'+p.key).onSnapshot(s=>{BD[b]=s.exists?s.data():null;refreshLB()},()=>{BD[b]=null}))});
+  unR=db.collection('rewards').where('uid','==',ME.uid).limit(30).onSnapshot(s=>{RWD=s.docs.map(d=>d.data()).sort((a,b)=>msOf(b.at)-msOf(a.at));refreshLB()},()=>{});
+  unTL=db.collection('tournaments').where('pub','==',true).limit(40).onSnapshot(s=>{TL=s.docs.map(d=>({id:d.id,...d.data()}));refreshLB()},()=>{});
+  unTE=db.collection('tEntries').where('uid','==',ME.uid).limit(60).onSnapshot(s=>{TMY=s.docs.map(d=>d.data()).sort((a,b)=>msOf(b.at)-msOf(a.at));refreshLB()},()=>{})}
+function refreshLB(){if(S||$('#menu').classList.contains('hide')||TAB!=='board'||BT==='new')return;tab('board')}
+setInterval(()=>{const e=$('#bcd');if(!e)return;const r=+e.dataset.end-Date.now();if(r<=0){subLB();return}
+  const d=Math.floor(r/864e5),h=Math.floor(r%864e5/36e5),m=Math.floor(r%36e5/6e4),s=Math.floor(r%6e4/1e3),p=x=>String(x).padStart(2,'0');e.textContent=(d?d+'d ':'')+p(h)+':'+p(m)+':'+p(s)},1000);
+function gamesToday(){const t0=dayStart(Date.now());return (PR.hist||[]).filter(x=>x.m==='online'&&x.s>0&&(x.r==='W'||x.r==='L')&&x.t>=t0).length}
+function tabBoard(m){
+  const subs=[['day','Daily'],['week','Weekly'],['month','Monthly'],['tour','Tourneys']];
+  m.innerHTML=`<div class="bar" style="margin-bottom:6px">${subs.map(s=>`<button class="${(BT===s[0]||(s[0]==='tour'&&(BT==='new'||BT==='det')))?'on':''}" onclick="sfx('click');BT='${s[0]}';tab('board')">${s[1]}</button>`).join('')}</div><div id="bbody"></div>`;
+  const b=$('#bbody');
+  if(!ME){b.innerHTML='<p>Log in to see the leaderboards and tournaments.</p><button class="alt" onclick="location.href=\'naija-arcade.html?next=naija-kick.html'+(OPENT?'&t='+OPENT:'')+'\'">🔐 LOG IN</button>';return}
+  if(BT==='tour')vTourList(b);else if(BT==='new')vTourNew(b);else if(BT==='det')vTourDet(b);else vBoard(b,BT)}
+function vBoard(b,bt){
+  const p=periodOf(bt,Date.now()),d=BD[bt],min=(d&&d.min)||2,pr=(d&&d.prizes)||[0,0,0],rows=(d&&d.rows)||[],gt=gamesToday(),pct=Math.min(100,Math.round(gt/min*100));
+  const upd=d&&d.updatedAt?Math.max(0,Math.round((Date.now()-d.updatedAt)/6e4)):null;
+  b.innerHTML=`<div class="sub" style="margin:0">${LBL[bt].toUpperCase()} · ${esc(plabel(bt,p))}</div><div class="cd2" id="bcd" data-end="${p.end}">--:--:--</div>
+  <p style="margin:0">Prize pool: <b style="color:#ffd23f">${NG(d?d.pot||0:0)}</b></p>
+  <div class="prz"><div>🥇 1st<b>${NG(pr[0]||0)}</b></div><div>🥈 2nd<b>${NG(pr[1]||0)}</b></div><div>🥉 3rd<b>${NG(pr[2]||0)}</b></div></div>
+  <p style="font-size:11px">Win staked online games: 10 points per win + 1 per ₦100 staked. The top 3 who play at least ${min} staked games ${bt==='day'?'today':'on the last day ('+esc(fdy(p.end-1))+')'} are paid into their wallet automatically.</p>
+  <div class="sub">YOUR GAMES TODAY</div><div class="pbar"><i style="width:${pct}%"></i></div><p style="margin:0 0 6px">${gt>=min?'✅ You qualify ('+gt+' played)':gt+' of '+min+' played'}</p>
+  <div id="lbl"></div>`;
+  const L=$('#lbl');
+  if(!d)L.innerHTML='<p>The board has not been published yet. It updates every few minutes.</p>';
+  else if(!rows.length)L.innerHTML='<p>No staked wins yet this period. Be the first! 🏆</p>';
+  else L.innerHTML=rows.slice(0,15).map((r,i)=>`<div class="lbr ${r.uid===ME.uid?'me':''}"><div class="rk">${i===0?'👑':i+1}</div><div class="nm">${esc(r.name)}${r.uid===ME.uid?' (you)':''}<small>${r.wins} wins · ${r.games} games</small></div><div class="pt">${r.points}<small>${r.ok?'✅':'🔒 '+(r.gt||0)+'/'+min}</small></div></div>`).join('')+(upd!=null?`<p style="font-size:10px">Updated ${upd<1?'just now':upd+' min ago'}</p>`:'');
+  if(RWD.length)L.innerHTML+='<div class="sub">MY REWARDS</div>'+RWD.slice(0,5).map(r=>`<div class="hl"><span>#${esc(r.rank)} · ${esc(LBL[r.board]||r.board)} ${esc(r.key)}<small>${esc(r.points)} points${r.why?' · '+esc(r.why):''}</small></span><b class="${r.status==='paid'?'w':r.status==='held'?'':'l'}">${r.status==='paid'?'PAID '+NG(r.prize):r.status==='held'?'ON HOLD':'NOT PAID'}</b></div>`).join('')}
+// ---- tournaments ----
+function vTourList(b){
+  const now=Date.now(),open=TL.filter(t=>t.end>now&&t.status==='open').sort((a,c)=>a.start-c.start);
+  b.innerHTML=`<button class="alt" onclick="sfx('click');BT='new';tab('board')">＋ CREATE A TOURNAMENT</button><div class="sub">MY TOURNAMENTS</div><div id="tmy"></div><div class="sub">OPEN TOURNAMENTS</div><div id="top"></div><p style="font-size:11px">Players in a tournament play staked games against each other at the stake the creator chose. 15% of every game always goes to Naija Kick.</p>`;
+  const row=(id,name,sub)=>`<button class="gh tr" onclick="openT('${id}')">${esc(name)}<small>${esc(sub)}</small></button>`;
+  $('#tmy').innerHTML=TMY.length?TMY.map(e=>row(e.tid,e.tname||'Tournament','Joined '+fdt(msOf(e.at)))).join(''):'<p>You have not joined any tournament yet.</p>';
+  $('#top').innerHTML=open.length?open.map(t=>row(t.id,t.name,NG(t.stake)+' per game · '+(now<t.start?'starts '+fdt(t.start):'live now · ends '+fdt(t.end)))).join(''):'<p>No public tournaments right now. Create one!</p>'}
+function vTourNew(b){
+  const d=new Date(Date.now()+6e4),pad=x=>String(x).padStart(2,'0'),dv=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+  b.innerHTML=`<h1 style="font-size:22px">NEW TOURNAMENT</h1>
+  <label class="fl">Name</label><input class="tx" type="text" id="tn" maxlength="30" placeholder="e.g. Friday Night Showdown">
+  <label class="fl">Stake per game (each player)</label><select id="ts" style="width:100%">${STK.map(s=>`<option value="${s}">${NG(s)} · winner gets ${NG(payN(s))}</option>`).join('')}</select>
+  <label class="fl">Starts</label><input type="datetime-local" id="tst" value="${dv}">
+  <label class="fl">Runs for</label><select id="td" style="width:100%"><option value="1">1 hour</option><option value="6">6 hours</option><option value="24" selected>1 day</option><option value="72">3 days</option><option value="168">7 days</option><option value="336">14 days</option><option value="720">30 days</option></select>
+  <label class="fl">Maximum players</label><input class="tx" type="number" id="tx" min="2" max="500" value="50">
+  <label class="fl">Who can see it</label><select id="tp" style="width:100%"><option value="1">Public (listed in Naija Kick)</option><option value="0">Private (invite link only)</option></select>
+  <label class="fl">Rules (optional, up to 300 letters)</label><textarea id="tr" maxlength="300" placeholder="e.g. Most points wins bragging rights. No quitting mid-match."></textarea>
+  <p style="font-size:11px;text-align:left">How it works: members play staked games against each other. Win = 10 points + 1 per ₦100 staked. The winner of each game is paid by the normal Kick rules, and <b>15% of every game always goes to Naija Kick</b>. This cannot be changed.</p>
+  <label class="fl" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="tok" style="width:auto"> I understand the 15% rule</label>
+  <div class="er" id="te"></div><button class="alt" onclick="createT()">CREATE TOURNAMENT</button><button class="gh" onclick="BT='tour';tab('board')">CANCEL</button>`}
+async function createT(){
+  const e=$('#te'),name=$('#tn').value.trim(),stake=+$('#ts').value,max=Math.round(+$('#tx').value),pub=$('#tp').value==='1',rules=$('#tr').value.trim().slice(0,300),sv=$('#tst').value,dur=+$('#td').value*36e5;
+  if(name.length<3)return e.textContent='Give the tournament a name (3 to 30 letters).';
+  if(!(max>=2&&max<=500))return e.textContent='Players must be between 2 and 500.';
+  if(!sv)return e.textContent='Choose a start time.';
+  if(!$('#tok').checked)return e.textContent='Tick the box to confirm the 15% rule.';
+  const st=Math.max(new Date(sv).getTime(),Date.now()-6e4);e.textContent='';
+  try{const r=await db.collection('tournaments').add({name,creator:ME.uid,cname:CFG.name.slice(0,12),stake,start:st,end:st+dur,max,pub,rules,houseCut:15,status:'open',created:FV().serverTimestamp()});
+    await db.doc('tEntries/'+r.id+'_'+ME.uid).set({tid:r.id,uid:ME.uid,name:CFG.name.slice(0,12),tname:name,at:FV().serverTimestamp()});
+    toast('Tournament created');openT(r.id)}catch(x){permErr(x)}}
+function openT(id){if(S&&!S.over){toast('Finish your match first');return}
+  TV=id;TD=null;TSD=null;TEN=[];[unTD,unTS,unTN].forEach(f=>f&&f());BT='det';
+  unTD=db.doc('tournaments/'+id).onSnapshot(s=>{TD=s.exists?s.data():false;refreshLB()},()=>{TD=false;refreshLB()});
+  unTS=db.doc('tStand/'+id).onSnapshot(s=>{TSD=s.exists?s.data():null;refreshLB()},()=>{});
+  unTN=db.collection('tEntries').where('tid','==',id).limit(200).onSnapshot(s=>{TEN=s.docs.map(d=>d.data());refreshLB()},()=>{});
+  home('board')}
+function vTourDet(b){const t=TD;
+  if(t===null){b.innerHTML='<p>Loading tournament…</p><button class="gh" onclick="BT=\'tour\';tab(\'board\')">BACK</button>';return}
+  if(t===false){b.innerHTML='<p>This tournament could not be found.</p><button class="gh" onclick="BT=\'tour\';tab(\'board\')">BACK</button>';return}
+  const now=Date.now(),joined=TEN.some(e=>e.uid===ME.uid),n=TEN.length,state=t.status!=='open'?'CLOSED':now<t.start?'STARTS '+fdt(t.start):now>t.end?'ENDED':'LIVE NOW',live=state==='LIVE NOW';
+  b.innerHTML=`<h1 style="font-size:22px">${esc(t.name)}</h1><p style="margin:0">by ${esc(t.cname||'a player')} · <b style="color:#ffd23f">${esc(state)}</b></p>
+  <div class="hs"><div><b>${NG(t.stake)}</b>STAKE / GAME</div><div><b>${n}/${t.max}</b>PLAYERS</div><div><b>${t.pub?'PUBLIC':'PRIVATE'}</b>VISIBILITY</div></div>
+  <p style="font-size:12px;margin:0">${fdt(t.start)} to ${fdt(t.end)}</p>
+  ${t.rules?`<div class="a u" style="margin:8px 0"><div><b>RULES</b><span>${esc(t.rules)}</span></div></div>`:''}
+  <p style="font-size:11px">Members play staked games against each other at ${NG(t.stake)}. Win = 10 points + 1 point per ₦100 staked. Standings update every few minutes. 15% of every game goes to Naija Kick as usual.</p>
+  ${!joined&&state!=='ENDED'&&state!=='CLOSED'&&n<t.max?'<button class="alt" onclick="joinT()">JOIN THIS TOURNAMENT</button>':''}
+  ${joined&&live?`<button class="alt" onclick="confirmStake(${t.stake},'pvp','${esc(TV)}')">⚽ PLAY A TOURNAMENT GAME · ${NG(t.stake)}</button>`:''}
+  ${joined&&!live&&state!=='ENDED'&&state!=='CLOSED'?'<p>You are in. Games open when the tournament starts.</p>':''}
+  <div class="row"><button onclick="shareT()">🔗 SHARE LINK</button><button class="gh" onclick="waT()">WHATSAPP</button></div>
+  <div class="sub">STANDINGS</div><div id="tstd"></div><div class="sub">PLAYERS (${n})</div><p style="font-size:12px">${TEN.map(e=>esc(e.name)).join(', ')||'—'}</p>
+  ${t.creator===ME.uid&&t.status==='open'&&state!=='ENDED'?'<button class="gh" onclick="closeT()">CANCEL TOURNAMENT</button>':''}
+  <button class="gh" onclick="BT='tour';tab('board')">← ALL TOURNAMENTS</button>`;
+  const rows=(TSD&&TSD.rows)||[],upd=TSD&&TSD.updatedAt?Math.max(0,Math.round((Date.now()-TSD.updatedAt)/6e4)):null;
+  $('#tstd').innerHTML=rows.length?rows.slice(0,20).map((r,i)=>`<div class="lbr ${r.uid===ME.uid?'me':''}"><div class="rk">${i===0&&r.points>0?'👑':i+1}</div><div class="nm">${esc(r.name)}${r.uid===ME.uid?' (you)':''}<small>${r.wins} wins · ${r.games} games</small></div><div class="pt">${r.points}</div></div>`).join('')+(upd!=null?`<p style="font-size:10px">Updated ${upd<1?'just now':upd+' min ago'}</p>`:''):'<p>No standings yet. They appear after the first games are played.</p>'}
+async function joinT(){if(!TD||!ME)return;try{await db.doc('tEntries/'+TV+'_'+ME.uid).set({tid:TV,uid:ME.uid,name:CFG.name.slice(0,12),tname:TD.name,at:FV().serverTimestamp()});toast('You joined the tournament')}catch(e){permErr(e)}}
+function closeT(){ask('Cancel this tournament for everyone?',async()=>{try{await db.doc('tournaments/'+TV).update({status:'closed'});toast('Tournament cancelled')}catch(e){permErr(e)}},'YES, CANCEL')}
+const tLink=id=>location.href.replace(/[^\/]*$/,'')+'naija-arcade.html?next=naija-kick.html&t='+id;
+function shareT(){const l=tLink(TV),t='Join my Naija Kick tournament "'+(TD?TD.name:'')+'": '+l;
+  if(navigator.share)navigator.share({title:'Naija Kick tournament',text:t,url:l}).catch(()=>{});
+  else if(navigator.clipboard)navigator.clipboard.writeText(l).then(()=>toast('Invite link copied'),()=>toast(l));else toast(l)}
+function waT(){window.open('https://wa.me/?text='+encodeURIComponent('Join my Naija Kick tournament "'+(TD?TD.name:'')+'": '+tLink(TV)),'_blank')}
+async function loadMembers(tid){try{const [ts,es]=await Promise.all([db.doc('tournaments/'+tid).get(),db.collection('tEntries').where('tid','==',tid).limit(500).get()]);
+  TMEM=new Set(es.docs.map(d=>d.data().uid));const t=ts.data()||{},now=Date.now();
+  return{ok:ts.exists,joined:TMEM.has(ME.uid),live:t.status==='open'&&now>=t.start&&now<=t.end}}catch(e){permErr(e);return{ok:false}}}
 function tabHist(m){const h=PR.hist||[],w=h.filter(x=>x.r==='W').length,l=h.filter(x=>x.r==='L').length,g=h.reduce((a,x)=>a+x.a,0),net=h.reduce((a,x)=>a+(x.n||0),0),rate=h.length?Math.round(w/h.length*100):0;
 m.innerHTML=`<div class="hs"><div><b>${h.length}</b>PLAYED</div><div><b>${w}</b>WON</div><div><b>${l}</b>LOST</div><div><b>${rate}%</b>WIN RATE</div><div><b>${g}</b>GOALS</div><div><b style="color:${net<0?'#ff6b7d':'#2ee66b'}">${net<0?'-':net>0?'+':''}${NG(Math.abs(net))}</b>NET CASH</div></div><div id="hl" style="max-height:34vh;overflow:auto"></div>`;
 const L=$('#hl');if(!h.length){L.textContent='No games yet. Play one!';return}
@@ -373,15 +501,18 @@ $('#mcard').querySelectorAll('.bar button').forEach(b=>b.classList.toggle('on',b
 if(t==='play'){m.innerHTML=`<div class="prof"><b>${CFG.name}</b> #${CFG.num} · LVL ${1+(PR.xp/100|0)} · 👛 <span id="wl">${NG(WL.balance)}</span><div class="xp"><i style="width:${PR.xp%100}%"></i></div></div>
 <button onclick="newGame('cpu',0)">⚽ VS COMPUTER · FREE DEMO</button>
 <div class="sub">💰 STAKE MATCH · REAL PLAYERS ONLINE</div><div class="chips" id="stk"></div>
-<p style="font-size:11px">You are matched with one real player at the same stake. If nobody is found in 30 seconds you can choose a clearly labelled AI bot. Winner collects both stakes minus a 15% fee on winnings. You can lose your stake. 18+ only. Gamble responsibly.</p>`;renderStk()}
-else if(t==='player')tabPlayer(m);else if(t==='ach')tabAch(m);else if(t==='wal')tabWal(m);else if(t==='hist')tabHist(m);else tabSet(m)}
-function home(t){S=null;P={};save();$('#hud').classList.add('hide');$('#ff').classList.add('hide');$('#menu').classList.remove('hide');$('#tag').textContent='';$('#pot').textContent='';BC=[CFG.ball,dk(CFG.ball,.7)];
-$('#mcard').innerHTML=`<button class="gh" style="width:auto;padding:7px 14px;font-size:12px;margin:0 0 8px;float:left" onclick="location.href='naija-arcade.html'">← BACK TO ARCADE</button><h1 style="clear:both">NAIJA KICK</h1><div class="wbar" id="wbar" onclick="tab('wal')"></div><div class="bar">${[['play','⚽ PLAY'],['player','👕 PLAYER'],['ach','🏅 TROPHIES'],['wal','👛 WALLET'],['hist','🕘 HISTORY'],['set','⚙ SETTINGS']].map(a=>`<button data-t="${a[0]}" onclick="sfx('click');tab('${a[0]}')">${a[1]}</button>`).join('')}</div><div id="mbody"></div>`;tab(t||TAB);renderBar()}
-if(au)au.onAuthStateChanged(u=>{if(unW){unW();unW=null}if(unP){unP();unP=null}if(!u){ME=null;WL={balance:0,locked:0};renderStk();renderBar();return}ME=u;
+<p style="font-size:11px">You are matched with one real player at the same stake. Winner collects both stakes minus a 15% fee on winnings. You can lose your stake. 18+ only. Gamble responsibly.</p>`;renderStk()}
+else if(t==='board')tabBoard(m);else if(t==='player')tabPlayer(m);else if(t==='ach')tabAch(m);else if(t==='wal')tabWal(m);else if(t==='hist')tabHist(m);else tabSet(m)}
+function home(t){S=null;P={};QTID=null;save();$('#hud').classList.add('hide');$('#ff').classList.add('hide');$('#menu').classList.remove('hide');$('#tag').textContent='';$('#pot').textContent='';BC=[CFG.ball,dk(CFG.ball,.7)];
+$('#mcard').innerHTML=`<button class="gh" style="width:auto;padding:7px 14px;font-size:12px;margin:0 0 8px;float:left" onclick="location.href='naija-arcade.html'">← BACK TO ARCADE</button><h1 style="clear:both">NAIJA KICK</h1><div class="wbar" id="wbar" onclick="tab('wal')"></div><div class="bar">${[['play','⚽ PLAY'],['board','🏆 BOARDS'],['player','👕 PLAYER'],['ach','🏅 TROPHIES'],['wal','👛 WALLET'],['hist','🕘 HISTORY'],['set','⚙ SETTINGS']].map(a=>`<button data-t="${a[0]}" onclick="sfx('click');tab('${a[0]}')">${a[1]}</button>`).join('')}</div><div id="mbody"></div>`;tab(t||TAB);renderBar()}
+if(au)au.onAuthStateChanged(u=>{if(unW){unW();unW=null}if(unP){unP();unP=null}
+if(!u){ME=null;WL={balance:0,locked:0};unsubLB();renderStk();renderBar();if(OPENT){location.replace('naija-arcade.html?next=naija-kick.html&t='+OPENT);return}return}
+ME=u;subLB();
 unP=db.doc('players/'+u.uid).onSnapshot(sn=>{const d=sn.exists?sn.data():{};
 if(!kLoaded){kLoaded=true;if(d.kick){const k=d.kick;PR.xp=k.xp||0;PR.coins=k.coins||0;PR.streak=k.streak||0;PR.w=k.w||0;PR.g=k.g||0;PR.sv=k.sv||0;PR.ach=k.ach||{};PR.hist=k.hist||PR.hist||[];if(k.cfg)CFG=clean(k.cfg)}else syncK()}
 renderBar();if(!S&&!$('#menu').classList.contains('hide')&&(TAB==='wal'||TAB==='hist'))tab(TAB)},()=>{});
-unW=db.doc('wallets/'+u.uid).onSnapshot(sn=>{WL=Object.assign({balance:0,locked:0},sn.exists?sn.data():{});renderStk();renderBar();if(!S&&TAB==='wal')tab('wal');resumeHold()},e=>permErr(e))});
+unW=db.doc('wallets/'+u.uid).onSnapshot(sn=>{WL=Object.assign({balance:0,locked:0},sn.exists?sn.data():{});renderStk();renderBar();if(!S&&TAB==='wal')tab('wal');resumeHold()},e=>permErr(e));
+if(OPENT&&!tOpened){tOpened=true;setTimeout(()=>{if(!S&&!holdBusy)openT(OPENT)},600)}});
 addEventListener('error',()=>toast('Something went wrong. Reload if the game freezes.'));
 home('play');
 </script></body></html>
